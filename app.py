@@ -12,7 +12,7 @@ def load_tasks():
             try:
                 return json.load(file)
             except json.JSONDecodeError:
-                return []  # If JSON is invalid, return an empty list
+                return []  # Return an empty list if the file is invalid
     return []
 
 # Save tasks to file
@@ -23,43 +23,40 @@ def save_tasks(tasks):
 # Streamlit App
 def main():
     st.title("📝 To-Do App by Jisan")
-    
-    # Load tasks
-    tasks = load_tasks()
-    
+
+    # Session state for tasks
+    if "tasks" not in st.session_state:
+        st.session_state.tasks = load_tasks()
+
     # Add a new task
     new_task = st.text_input("Add a new task:")
     if st.button("Add Task"):
         if new_task.strip():
-            tasks.append({"task": new_task.strip(), "completed": False})
-            save_tasks(tasks)
+            st.session_state.tasks.append({"task": new_task.strip(), "completed": False})
+            save_tasks(st.session_state.tasks)
             st.success(f"Task '{new_task}' added!")
-            st.experimental_rerun()  # Refresh the UI
         else:
             st.error("Please enter a valid task.")
-    
+
     # Display tasks
     st.subheader("Your Tasks:")
-    if tasks:  # Check if there are any tasks
-        for i, task in enumerate(tasks):
+    if st.session_state.tasks:  # Check if tasks exist
+        for i, task in enumerate(st.session_state.tasks):
             col1, col2, col3 = st.columns([0.1, 0.7, 0.2])
             with col1:
                 if st.checkbox("", value=task["completed"], key=f"complete-{i}"):
-                    tasks[i]["completed"] = not task["completed"]
-                    save_tasks(tasks)
+                    st.session_state.tasks[i]["completed"] = not task["completed"]
+                    save_tasks(st.session_state.tasks)
             with col2:
                 task_text = f"~~{task['task']}~~" if task["completed"] else task["task"]
                 st.write(task_text)
             with col3:
                 if st.button("❌", key=f"del-{i}"):
-                    tasks.pop(i)
-                    save_tasks(tasks)
-                    st.experimental_rerun()  # Refresh the UI
+                    st.session_state.tasks.pop(i)
+                    save_tasks(st.session_state.tasks)
+                    st.experimental_rerun()  # Force refresh for consistent state
     else:
         st.write("No tasks yet. Add a new task above.")
-
-    # Save updated tasks (though we are already doing this after task deletion)
-    save_tasks(tasks)
 
 if __name__ == "__main__":
     main()
