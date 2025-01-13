@@ -1,71 +1,125 @@
 import streamlit as st
-import json
-import os
+import pandas as pd 
+from db_funcs import *
+from PIL import Image
+import plotly.express as px 
 
-# File to store tasks
-TASK_FILE = "tasks.json"
+def color_df(val):
+	if val == "Done":
+		color = "green"
+	elif val == "Doing":
+		color = "orange"
+	else:
+		color = "red"
 
-# Load tasks from file
-def load_tasks():
-    """Loads tasks from the JSON file.
+	return f'background-color: {color}'
 
-    Returns:
-        list: A list of dictionaries, where each dictionary represents a task 
-             with keys "task" (string) and "completed" (boolean).
-    """
-    if os.path.exists(TASK_FILE):
-        try:
-            with open(TASK_FILE, "r") as file:
-                return json.load(file)
-        except json.JSONDecodeError:
-            st.warning("Error loading tasks: Invalid JSON file. Creating a new one.")
-            return []  # Create an empty list if the file is invalid
-    return []
+st.set_page_config(
+    page_title="ToDo",
+    page_icon="📝",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
-# Save tasks to file
-def save_tasks(tasks):
-    """Saves the list of tasks to the JSON file."""
-    with open(TASK_FILE, "w") as file:
-        json.dump(tasks, file, indent=4)  # Indent for better readability
+top_image = Image.open('static/banner_top.png')
+bottom_image = Image.open('static/banner_bottom.png')
+main_image = Image.open('static/main_banner.png')
 
-# Streamlit App
-def main():
-    st.title("📝 To-Do App")
+st.image(main_image,use_column_width='always')
+st.title("📄 ToDo App 🗣")
 
-    # Session state for tasks
-    if "tasks" not in st.session_state:
-        st.session_state.tasks = load_tasks()
+st.sidebar.image(top_image,use_column_width='auto')
+choice = st.sidebar.selectbox("Menu", ["Create Task ✅","Update Task 👨‍💻","Delete Task ❌", "View Tasks' Status 👨‍💻"])
+st.sidebar.image(bottom_image,use_column_width='auto')
+create_table()
 
-    # Add a new task
-    new_task = st.text_input("Add a new task:")
-    if st.button("Add Task"):
-        if new_task.strip():
-            st.session_state.tasks.append({"task": new_task.strip(), "completed": False})
-            save_tasks(st.session_state.tasks)
-            st.success(f"Task '{new_task}' added!")
-            st.experimental_rerun()  # Refresh the UI after adding a task
+if choice == "Create Task ✅":
+	st.subheader("Add Item")
+	col1,col2 = st.columns(2)
 
-    # Display tasks
-    st.subheader("Your Tasks:")
-    if st.session_state.tasks:
-        for i, task in enumerate(st.session_state.tasks):
-            col1, col2, col3 = st.columns([0.1, 0.7, 0.2])
-            with col1:
-                completed = task.get("completed", False)
-                if st.checkbox("", value=completed, key=f"complete-{i}"):
-                    st.session_state.tasks[i]["completed"] = not completed
-                    save_tasks(st.session_state.tasks) 
-            with col2:
-                task_text = f"~~{task['task']}~~" if completed else task['task']
-                st.write(task_text)
-            with col3:
-                if st.button("❌", key=f"del-{i}"):
-                    del st.session_state.tasks[i]
-                    save_tasks(st.session_state.tasks)
-                    st.experimental_rerun() 
+	with col1:
+		task = st.text_area("Task To Do")
 
-    else:
-        st.write("No tasks yet. Add a new task above.")
+	with col2:
+		task_status = st.selectbox("Status",["ToDo","Doing","Done"])
+		task_due_date = st.date_input("Due Date")
 
-if __name__ == "__main__":
-    main()
+	if st.button("Add Task"):
+		add_data(task,task_status,task_due_date)
+		st.success("Added Task \"{}\" ✅".format(task))
+		st.balloons()
+
+elif choice == "Update Task 👨‍💻":
+	st.subheader("Edit Items")
+	with st.expander("Current Data"):
+		result = view_all_data()
+		clean_df = pd.DataFrame(result,columns=["Task","Status","Date"])
+		st.dataframe(clean_df.style.applymap(color_df,subset=['Status']))
+
+	list_of_tasks = [i[0] for i in view_all_task_names()]
+	selected_task = st.selectbox("Task",list_of_tasks)
+	task_result = get_task(selected_task)
+
+	if task_result:
+		task = task_result[0][0]
+		task_status = task_result[0][1]
+		task_due_date = task_result[0][2]
+
+		col1,col2 = st.columns(2)
+
+		with col1:
+			new_task = st.text_area("Task To Do",task)
+
+		with col2:
+			new_task_status = st.selectbox(task_status,["To Do","Doing","Done"])
+			new_task_due_date = st.date_input(task_due_date)
+
+		if st.button("Update Task 👨‍💻"):
+			edit_task_data(new_task,new_task_status,new_task_due_date,task,task_status,task_due_date)
+			st.success("Updated Task \"{}\" ✅".format(task,new_task))
+
+		with st.expander("View Updated Data 💫"):
+			result = view_all_data()
+			# st.write(result)
+			clean_df = pd.DataFrame(result,columns=["Task","Status","Date"])
+			st.dataframe(clean_df.style.applymap(color_df,subset=['Status']))
+
+elif choice == "Delete Task ❌":
+	st.subheader("Delete")
+	with st.expander("View Data"):
+		result = view_all_data()
+		# st.write(result)
+		clean_df = pd.DataFrame(result,columns=["Task","Status","Date"])
+		st.dataframe(clean_df.style.applymap(color_df,subset=['Status']))
+
+	unique_list = [i[0] for i in view_all_task_names()]
+	delete_by_task_name =  st.selectbox("Select Task",unique_list)
+	if st.button("Delete ❌"):
+		delete_data(delete_by_task_name)
+		st.warning("Deleted Task \"{}\" ✅".format(delete_by_task_name))
+
+	with st.expander("View Updated Data 💫"):
+		result = view_all_data()
+		# st.write(result)
+		clean_df = pd.DataFrame(result,columns=["Task","Status","Date"])
+		st.dataframe(clean_df.style.applymap(color_df,subset=['Status']))
+
+else:
+	with st.expander("View All 📝"):
+		result = view_all_data()
+		# st.write(result)
+		clean_df = pd.DataFrame(result,columns=["Task","Status","Date"])
+		st.dataframe(clean_df.style.applymap(color_df,subset=['Status']))
+
+	with st.expander("Task Status 📝"):
+		task_df = clean_df['Status'].value_counts().to_frame()
+		task_df = task_df.reset_index()
+		st.dataframe(task_df)
+
+		p1 = px.pie(task_df,names='index',values='Status', color='index',
+			color_discrete_map={'ToDo':'red',
+                                 'Done':'green',
+                                 'Doing':'orange'})
+		st.plotly_chart(p1,use_container_width=True)
+
+st.markdown("<br><hr><center>Made with ❤️ by <a href='mailto:ralhanprateek@gmail.com?subject=ToDo WebApp!&body=Please specify the issue you are facing with the app.'><strong>Prateek Ralhan</strong></a></center><hr>", unsafe_allow_html=True)
