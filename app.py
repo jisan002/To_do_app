@@ -51,12 +51,26 @@ def main():
                 task_text = f"~~{task['task']}~~" if task["completed"] else task["task"]
                 st.write(task_text)
             with col3:
+                # Custom logic to safely delete a task
                 if st.button("❌", key=f"del-{i}"):
-                    st.session_state.tasks.pop(i)
-                    save_tasks(st.session_state.tasks)
-                    st.experimental_rerun()  # Force refresh for consistent state
+                    # Mark task for deletion
+                    delete_task(i)
+
     else:
         st.write("No tasks yet. Add a new task above.")
+
+    # Save updated tasks
+    save_tasks(st.session_state.tasks)
+
+
+# Function to delete a task
+def delete_task(index):
+    try:
+        st.session_state.tasks.pop(index)  # Remove the task
+        save_tasks(st.session_state.tasks)  # Save updated tasks
+        st.experimental_rerun()  # Refresh UI to reflect changes
+    except IndexError:
+        st.error("Error: Task index out of range.")
 
 if __name__ == "__main__":
     main()
