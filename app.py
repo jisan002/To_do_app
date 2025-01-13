@@ -60,19 +60,12 @@ def main():
                 st.write(task_text)
             with col3:
                 if st.button("❌", key=f"del-{i}"):
-                    delete_task(i)
+                    del st.session_state.tasks[i]  # Delete task directly from list
+                    save_tasks(st.session_state.tasks)  # Save updated tasks
+                    st.experimental_rerun()  # Optional: Rerun only if necessary for complex updates
+
     else:
         st.write("No tasks yet. Add a new task above.")
-
-# Function to delete a task
-def delete_task(index):
-    """Safely deletes a task from the list and updates the UI."""
-    try:
-        del st.session_state.tasks[index]
-        save_tasks(st.session_state.tasks)
-        st.experimental_rerun()
-    except IndexError:
-        st.error("Error: Task index out of range.")
 
 if __name__ == "__main__":
     main()
