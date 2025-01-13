@@ -57,8 +57,8 @@ def main():
                     st.session_state.tasks[i]["completed"] = not completed
                     save_tasks(st.session_state.tasks)
             with col2:
-                task_text = f"~~{task['task']}~~" if completed else task["task"]
-                st.write(task_text)
+                task_text = f"~~{task['task']}~~" if completed else task['task'] 
+                st.write(task_text) 
             with col3:
                 if st.button("❌", key=f"del-{i}"):
                     del st.session_state.tasks[i]  # Delete task directly from list
