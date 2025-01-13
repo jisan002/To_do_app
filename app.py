@@ -9,7 +9,13 @@ TASK_FILE = "tasks.json"
 def load_tasks():
     if os.path.exists(TASK_FILE):
         with open(TASK_FILE, "r") as file:
-            return json.load(file)
+            try:
+                tasks = json.load(file)
+                # Validate tasks structure
+                if isinstance(tasks, list) and all("task" in t and "completed" in t for t in tasks):
+                    return tasks
+            except json.JSONDecodeError:
+                pass
     return []
 
 # Save tasks to file
@@ -43,6 +49,7 @@ def main():
             if st.checkbox("", value=task["completed"], key=f"complete-{i}"):
                 tasks[i]["completed"] = not task["completed"]
                 save_tasks(tasks)
+                st.experimental_rerun()
         with col2:
             task_text = f"~~{task['task']}~~" if task["completed"] else task["task"]
             st.write(task_text)
