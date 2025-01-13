@@ -7,22 +7,30 @@ TASK_FILE = "tasks.json"
 
 # Load tasks from file
 def load_tasks():
+    """Loads tasks from the JSON file.
+
+    Returns:
+        list: A list of dictionaries, where each dictionary represents a task 
+             with keys "task" (string) and "completed" (boolean).
+    """
     if os.path.exists(TASK_FILE):
-        with open(TASK_FILE, "r") as file:
-            try:
+        try:
+            with open(TASK_FILE, "r") as file:
                 return json.load(file)
-            except json.JSONDecodeError:
-                return []  # Return an empty list if the file is invalid
+        except json.JSONDecodeError:
+            st.warning("Error loading tasks: Invalid JSON file. Creating a new one.")
+            return []  # Create an empty list if the file is invalid
     return []
 
 # Save tasks to file
 def save_tasks(tasks):
+    """Saves the list of tasks to the JSON file."""
     with open(TASK_FILE, "w") as file:
-        json.dump(tasks, file)
+        json.dump(tasks, file, indent=4)  # Indent for better readability
 
 # Streamlit App
 def main():
-    st.title("📝 To-Do App by Jisan")
+    st.title("📝 To-Do App")
 
     # Session state for tasks
     if "tasks" not in st.session_state:
@@ -40,7 +48,7 @@ def main():
 
     # Display tasks
     st.subheader("Your Tasks:")
-    if st.session_state.tasks:  # Check if tasks exist
+    if st.session_state.tasks:
         for i, task in enumerate(st.session_state.tasks):
             col1, col2, col3 = st.columns([0.1, 0.7, 0.2])
             with col1:
@@ -51,24 +59,18 @@ def main():
                 task_text = f"~~{task['task']}~~" if task["completed"] else task["task"]
                 st.write(task_text)
             with col3:
-                # Custom logic to safely delete a task
                 if st.button("❌", key=f"del-{i}"):
-                    # Mark task for deletion
                     delete_task(i)
-
     else:
         st.write("No tasks yet. Add a new task above.")
 
-    # Save updated tasks
-    save_tasks(st.session_state.tasks)
-
-
 # Function to delete a task
 def delete_task(index):
+    """Safely deletes a task from the list and updates the UI."""
     try:
-        st.session_state.tasks.pop(index)  # Remove the task
-        save_tasks(st.session_state.tasks)  # Save updated tasks
-        st.experimental_rerun()  # Refresh UI to reflect changes
+        del st.session_state.tasks[index]
+        save_tasks(st.session_state.tasks)
+        st.experimental_rerun()
     except IndexError:
         st.error("Error: Task index out of range.")
 
