@@ -30,7 +30,7 @@ def save_tasks(tasks):
 
 # Streamlit App
 def main():
-    st.title("📝 To-Do App by Al Takvir Ahmed Jisan")
+    st.title("📝 To-Do App")
 
     # Session state for tasks
     if "tasks" not in st.session_state:
@@ -52,11 +52,16 @@ def main():
         for i, task in enumerate(st.session_state.tasks):
             col1, col2, col3 = st.columns([0.1, 0.7, 0.2])
             with col1:
-                if st.checkbox("", value=task["completed"], key=f"complete-{i}"):
-                    st.session_state.tasks[i]["completed"] = not task["completed"]
+                # Check if "completed" key exists, use False as default if not
+                if "completed" in task:
+                    completed = task["completed"]
+                else:
+                    completed = False
+                if st.checkbox("", value=completed, key=f"complete-{i}"):
+                    st.session_state.tasks[i]["completed"] = not completed
                     save_tasks(st.session_state.tasks)
             with col2:
-                task_text = f"~~{task['task']}~~" if task["completed"] else task["task"]
+                task_text = f"~~{task['task']}~~" if completed else task["task"]
                 st.write(task_text)
             with col3:
                 if st.button("❌", key=f"del-{i}"):
