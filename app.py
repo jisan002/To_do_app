@@ -62,7 +62,6 @@ def main():
                 if st.button("❌", key=f"del-{i}"):
                     del st.session_state.tasks[i]  # Delete task directly from list
                     save_tasks(st.session_state.tasks)  # Save updated tasks
-                    st.experimental_rerun()  # Optional: Rerun only if necessary for complex updates
 
     else:
         st.write("No tasks yet. Add a new task above.")
