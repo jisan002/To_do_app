@@ -52,11 +52,7 @@ def main():
         for i, task in enumerate(st.session_state.tasks):
             col1, col2, col3 = st.columns([0.1, 0.7, 0.2])
             with col1:
-                # Check if "completed" key exists, use False as default if not
-                if "completed" in task:
-                    completed = task["completed"]
-                else:
-                    completed = False
+                completed = task.get("completed", False)  # Handle missing "completed" key
                 if st.checkbox("", value=completed, key=f"complete-{i}"):
                     st.session_state.tasks[i]["completed"] = not completed
                     save_tasks(st.session_state.tasks)
