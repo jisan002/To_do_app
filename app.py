@@ -9,7 +9,10 @@ TASK_FILE = "tasks.json"
 def load_tasks():
     if os.path.exists(TASK_FILE):
         with open(TASK_FILE, "r") as file:
-            return json.load(file)
+            try:
+                return json.load(file)
+            except json.JSONDecodeError:
+                return []  # If JSON is invalid, return an empty list
     return []
 
 # Save tasks to file
@@ -37,22 +40,25 @@ def main():
     
     # Display tasks
     st.subheader("Your Tasks:")
-    for i, task in enumerate(tasks):
-        col1, col2, col3 = st.columns([0.1, 0.7, 0.2])
-        with col1:
-            if st.checkbox("", value=task["completed"], key=f"complete-{i}"):
-                tasks[i]["completed"] = not task["completed"]
-                save_tasks(tasks)
-        with col2:
-            task_text = f"~~{task['task']}~~" if task["completed"] else task["task"]
-            st.write(task_text)
-        with col3:
-            if st.button("❌", key=f"del-{i}"):
-                tasks.pop(i)
-                save_tasks(tasks)
-                st.experimental_rerun()  # Refresh the UI
+    if tasks:  # Check if there are any tasks
+        for i, task in enumerate(tasks):
+            col1, col2, col3 = st.columns([0.1, 0.7, 0.2])
+            with col1:
+                if st.checkbox("", value=task["completed"], key=f"complete-{i}"):
+                    tasks[i]["completed"] = not task["completed"]
+                    save_tasks(tasks)
+            with col2:
+                task_text = f"~~{task['task']}~~" if task["completed"] else task["task"]
+                st.write(task_text)
+            with col3:
+                if st.button("❌", key=f"del-{i}"):
+                    tasks.pop(i)
+                    save_tasks(tasks)
+                    st.experimental_rerun()  # Refresh the UI
+    else:
+        st.write("No tasks yet. Add a new task above.")
 
-    # Save updated tasks (although we are already doing this after task deletion)
+    # Save updated tasks (though we are already doing this after task deletion)
     save_tasks(tasks)
 
 if __name__ == "__main__":
