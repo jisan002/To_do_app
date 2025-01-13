@@ -30,7 +30,7 @@ def save_tasks(tasks):
 
 # Streamlit App
 def main():
-    st.title("📝 To-Do App")
+    st.title("📝 To-Do App by Al Takvir Ahmed Jisan")
 
     # Session state for tasks
     if "tasks" not in st.session_state:
